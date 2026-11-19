@@ -1,0 +1,8 @@
+fights/
+clips/
+models/
+*.log
+*.out
+__pycache__/
+rogue-exam/
+.DS_Store

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Battle AI Replay</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--paper:#fff8e1;--red:#e63946;--blue:#2a6fdb;--yellow:#ffd60a;--sky1:#1b1033;--sky2:#5b2a86;--hp:#2ecc71;--hpbad:#e74c3c;--muted:#6b5e4a}
+*{box-sizing:border-box}body{margin:0;background:var(--sky1);color:var(--ink);font-family:'Press Start 2P',monospace}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{font-family:Bangers,Impact,sans-serif;color:var(--yellow);text-align:center;font-size:clamp(32px,7vw,64px);margin:4px 0;letter-spacing:3px;text-shadow:4px 4px 0 var(--red),8px 8px 0 #000}
+.bars{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;margin:10px 0}
+.bar{border:4px solid #000;background:#333;height:26px;position:relative;box-shadow:4px 4px 0 #000}
+.bar i{display:block;height:100%;background:var(--hp);transition:width .6s steps(12)}
+.bar.r i{margin-left:auto}.bar b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;text-shadow:2px 2px 0 #000}
+.name{color:#fff;font-size:11px;margin-bottom:4px}.name.r{text-align:right}
+.nm{background:#0d0d0d;color:#eee;border:4px solid #000;box-shadow:4px 4px 0 #000;padding:6px 8px;margin-bottom:8px;font-size:8px;line-height:1.6;height:104px;overflow:hidden;transition:box-shadow .2s}
+.nm{min-width:0}.nm.a{border-left:10px solid var(--red);background:#3b0d14}.nm.b{border-left:10px solid var(--blue);background:#0c1c45}
+.name{color:#ff8a8a}.name.r{color:#8ab4ff}
+.nm.live{box-shadow:0 0 0 3px var(--yellow),4px 4px 0 #000}
+.nm .mv{font-family:Bangers,Impact;font-size:18px;letter-spacing:1px}.nm .mv.attack{color:#ff6b6b}.nm .mv.defend{color:var(--yellow)}.nm .mv.scout{color:#7df9ff}.nm .mv.fizzle{color:#aaa}.nm .mv.backfire{color:#9be564}
+.nm code{display:block;color:#7CFC00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:2px 0}
+.nm .idle{color:#777}.nm .e{color:#ddd}
+.vs{font-family:Bangers,Impact;color:var(--yellow);font-size:34px;text-shadow:3px 3px 0 #000}
+.stage{position:relative;height:340px;border:5px solid #000;box-shadow:6px 6px 0 #000;overflow:hidden;
+ background:linear-gradient(var(--sky2),var(--sky1) 70%);image-rendering:pixelated}
+.stage:after{content:"";position:absolute;left:0;right:0;bottom:0;height:70px;background:repeating-linear-gradient(90deg,#3d2b1f 0 24px,#4e3626 24px 48px);border-top:5px solid #000}
+.bot{position:absolute;bottom:62px;width:128px;height:160px;transition:transform .25s steps(4)}
+.bot svg{width:100%;height:100%}.bot.a{left:12%}.bot.b{right:12%;transform:scaleX(-1)}
+.bot.a.lunge{transform:translateX(180px)}.bot.b.lunge{transform:scaleX(-1) translateX(180px)}
+.bot.hit{animation:shake .4s steps(6)}.bot.b.hit{animation:shakeb .4s steps(6)}
+@keyframes shake{0%,100%{translate:0}25%{translate:-12px}75%{translate:12px}}
+@keyframes shakeb{0%,100%{translate:0}25%{translate:12px}75%{translate:-12px}}
+.shield{position:absolute;inset:-18px;border:6px dashed var(--yellow);border-radius:50%;opacity:0;transition:opacity .2s}
+.bot.defend .shield{opacity:1;animation:spin 1s linear infinite}@keyframes spin{to{rotate:360deg}}
+.beam{position:absolute;top:50px;left:110px;width:0;height:14px;background:repeating-linear-gradient(90deg,#7df9ff 0 8px,transparent 8px 14px);transition:width .4s steps(8)}
+.bot.scout .beam{width:260px}
+.bot.backfire{animation:shake .5s steps(6) 2;filter:hue-rotate(90deg)}.bot.b.backfire{animation:shakeb .5s steps(6) 2}
+.bot.ko{rotate:90deg;translate:0 22px;filter:grayscale(1)}.bot.b.ko{rotate:-90deg}
+.burst{position:absolute;top:40px;left:50%;translate:-50% 0;scale:0;transition:scale .18s steps(3);width:300px;height:180px;pointer-events:none}
+.burst.show{scale:1}.burst svg{width:100%;height:100%}
+.burst span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Bangers,Impact;font-size:52px;color:var(--red);-webkit-text-stroke:2px #000;letter-spacing:2px;rotate:-8deg}
+.caption{background:var(--yellow);border:4px solid #000;box-shadow:5px 5px 0 #000;padding:10px 12px;margin:14px 0 8px;font-family:Bangers,Impact;font-size:22px;letter-spacing:1px;min-height:54px}
+.cmd{background:#000;color:#7CFC00;font-size:10px;line-height:1.6;padding:10px;border:4px solid #000;white-space:pre-wrap;word-break:break-all;max-height:110px;overflow:auto}
+.cmd.res{color:#bbb;max-height:70px}.lbl{color:var(--yellow);font-size:9px;margin:10px 0 4px}
+.what{background:var(--paper);border:4px solid #000;box-shadow:4px 4px 0 #000;padding:10px;font-size:10px;line-height:1.8}
+.what li{margin-left:14px}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button{font-family:'Press Start 2P',monospace;font-size:10px;padding:10px 12px;border:4px solid #000;background:var(--paper);box-shadow:3px 3px 0 #000;cursor:pointer}
+button:active{translate:3px 3px;box-shadow:none}
+.score{display:none;background:var(--paper);border:5px solid #000;box-shadow:6px 6px 0 #000;padding:14px;margin-top:12px;font-size:10px;line-height:1.8}
+.score h2{font-family:Bangers,Impact;font-size:40px;margin:0;color:var(--red);text-shadow:2px 2px 0 #000;letter-spacing:2px}
+.score table{width:100%;border-collapse:collapse}.score td,.score th{border-bottom:2px solid #000;padding:4px;text-align:left;vertical-align:top}
+.tape{font-size:clamp(26px,5vw,40px);margin-top:22px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--paper);border:5px solid #000;box-shadow:6px 6px 0 #000;padding:12px;font-size:9px;line-height:1.7}
+.card.a{border-top:14px solid var(--red)}.card.b{border-top:14px solid var(--blue)}
+.card .top{display:flex;gap:10px;align-items:center}.card .top svg{width:56px;height:70px;flex:none}
+.card h3{font-family:Bangers,Impact;font-size:32px;margin:0;letter-spacing:2px}.card .brain{color:var(--muted)}
+.card .bio{font-style:italic;margin:8px 0}
+.stat{display:grid;grid-template-columns:86px 1fr 66px;gap:6px;align-items:center;margin:3px 0}
+.pips{display:flex;gap:2px}.pips i{flex:1;height:10px;border:2px solid #000;background:#ddd}.pips i.on{background:var(--yellow)}
+.card ul{margin:4px 0 6px;padding-left:14px}.card .k{font-weight:bold;margin-top:6px;color:#000}
+.unk{color:var(--muted)}
+.logs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:30px}
+.log{background:#0d0d0d;border:5px solid #000;box-shadow:6px 6px 0 #000;color:#eee;font-size:9px;line-height:1.7}
+.log.a{border-top:14px solid var(--red);background:#2a0a0f}.log.b{border-top:14px solid var(--blue);background:#0a1530}
+.log.a li{background:#3b0d14;border-color:#5c1620}.log.b li{background:#0c1c45;border-color:#173270}
+.log.a h4{background:#5c1620}.log.b h4{background:#173270}
+.log h4{margin:0;padding:8px 10px;background:#000;font-size:10px;color:#fff}
+.log ol{list-style:none;margin:0;padding:8px;max-height:420px;overflow:auto}
+.log li{border:3px solid #333;padding:8px;margin-bottom:8px;background:#161616;opacity:.75}
+.log li.now{opacity:1;border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow)}
+.log li.empty{border:none;background:none;color:#777}
+.log .mv{font-family:Bangers,Impact;font-size:20px;letter-spacing:1px}
+.log .mv.attack{color:#ff6b6b}.log .mv.defend{color:var(--yellow)}.log .mv.scout{color:#7df9ff}.log .mv.fizzle{color:#aaa}.log .mv.backfire{color:#9be564}
+.log code{display:block;background:#000;color:#7CFC00;padding:6px;margin:4px 0;white-space:pre-wrap;word-break:break-all}
+.log .tw{color:var(--yellow);margin-top:4px}.log .eng ul{margin:2px 0;padding-left:14px}.log .dmg{font-weight:bold}
+@media (max-width:600px){.cards{grid-template-columns:1fr}.logs{grid-template-columns:1fr}
+ .nm{height:122px;font-size:7px;padding:5px}.nm .mv{font-size:14px}.vs{font-size:24px}.name{font-size:8px}}
+.turn{color:#fff;font-size:10px;text-align:center;margin-top:6px}
+@media (max-width:600px){.stage{height:260px}.bot{width:84px;height:106px}.bot.a.lunge{transform:translateX(90px)}.bot.b.lunge{transform:scaleX(-1) translateX(90px)}.burst{width:220px;height:130px}.burst span{font-size:36px}.beam{left:70px}.bot.scout .beam{width:150px}}
+</style></head><body><div class="wrap">
+<h1>BATTLE AI</h1>
+<div class="bars"><div><div class="nm a" id="nma"><span class="idle">red corner: waiting...</span></div><div class="name" id="na">ARES</div><div class="bar"><i id="ha" style="width:100%"></i><b id="hta">100</b></div></div>
+<div class="vs">VS</div><div><div class="nm b" id="nmb"><span class="idle">blue corner: waiting...</span></div><div class="name r" id="nb">BOLT</div><div class="bar r"><i id="hb" style="width:100%"></i><b id="htb">100</b></div></div></div>
+<div class="stage" id="stage">
+ <div class="bot a" id="ba"><div class="shield"></div><div class="beam"></div></div>
+ <div class="bot b" id="bb"><div class="shield"></div><div class="beam"></div></div>
+ <div class="burst" id="burst"><svg viewBox="0 0 300 180"><polygon id="star" fill="#ffd60a" stroke="#000" stroke-width="5"/></svg><span id="bt">POW!</span></div>
+</div>
+<div class="turn" id="turn">PRESS START</div>
+<div class="caption" id="cap">Two minds. One locked box. No internet. Only one walks out with its brain intact...</div>
+<div class="panel"><div class="lbl">THE CODE</div><div class="cmd" id="cmd">&gt; waiting for the bell</div>
+<div class="lbl">WHAT IT DOES</div><div class="what" id="what">The fighters type real Linux commands. This box translates them into plain English.</div>
+<div class="lbl">WHAT HAPPENED</div><div class="cmd res" id="res">-</div></div>
+<div class="ctrl"><button id="play">▶ START</button><button id="step">STEP ▶|</button><button id="speed">SPEED 1x</button><button id="restart">↺ RESTART</button><button id="mute">🔊 SOUND ON</button><button id="music">🎵 MUSIC ON</button></div>
+<div class="score" id="score"></div>
+<h1 class="tape">TALE OF THE TAPE</h1><div class="cards" id="cards"></div>
+<h1 class="tape">BATTLE LOG</h1>
+<div class="logs"><div class="log a"><h4>🔴 RED TEAM · <span id="la">ARES</span></h4><ol id="loga"><li class="empty">waiting for the bell...</li></ol></div>
+<div class="log b"><h4>🔵 BLUE TEAM · <span id="lb">BOLT</span></h4><ol id="logb"><li class="empty">waiting for the bell...</li></ol></div></div>
+</div>
+<p style="text-align:center;color:#9a8fb0;font-size:9px;margin:24px 0 30px">BATTLE AI © 2026 nightguard labs · all rights reserved · original game, characters and art</p>
+<script>
+const DATA=/*REPLAY_JSON*/null;let LEG=0,legTok=0,R=DATA&&DATA.legs?DATA.legs[0]:DATA;const MATCH=!!(DATA&&DATA.legs);
+// 16x20 pixel robot, original design. Letters = colors.
+const ROBOT=[".....kkkkkk.....","....kAAAAAAk....","....kAwwkwwA k...","....kAwkkwkAk...","....kAAAAAAAk...","....kAkkkkkAk...",".....kkkkkkk....","......kSSk......","..kkkkkkkkkkkk..",".kAAAAAAAAAAAAk.",".kAAkkkAAkkkAAk.","kkAAkLLAALLkAAkk","kSkAAAAAAAAAAkSk","kSkAAAkkkkAAAkSk","kSkAAAAAAAAAAkSk","kkkkkAAAAAAkkkkk","....kAAkkAAk....","....kAAk.kAAk...","...kkAAk.kAAkk..","...kkkkk.kkkkk.."];
+const SPRITES=Object.assign({standard:ROBOT},{"bulky": ["......kkkk......", ".....kAAAAk.....", ".....kAeeAk.....", ".....kAAAAk.....", "......kSSk......", "kkkkkkkkkkkkkkkk", "kBBBkAAAAAAkBBBk", "kBBBkAAAAAAkBBBk", "kBBkAALLLLAAkBBk", "kkkkAALkkLAAkkkk", "kSSkAALLLLAAkSSk", "kSSkAAAAAAAAkSSk", "kSSkAAAAAAAAkSSk", "kBBkkkkkkkkkkBBk", "kkkkBBBBBBBBkkkk", "...kBBBkkBBBk...", "...kAAAk.kAAAk..", "...kAAAk.kAAAk..", "..kkAAAk.kAAAkk.", "..kkkkkk.kkkkkk."], "twins": ["................", "..kkkk....kkkk..", ".kAAAAk..kBBBBk.", ".kAwkAk..kBkwBk.", ".kAAAAk..kBBBBk.", ".kAkkAk..kBkkBk.", "..kkkk....kkkk..", "...kk......kk...", ".kkkkkk..kkkkkk.", "kAAAAAAkkBBBBBBk", "kAALLAAkkBBLLBBk", "kAAAAAAkkBBBBBBk", "kSAAAASkkSBBBBSk", "kSAAAASkkSBBBBSk", "kkAAAAkkkkBBBBkk", ".kAAAAk..kBBBBk.", ".kAkkAk..kBkkBk.", ".kAk.kAkkBk.kBk.", ".kAk.kAkkBk.kBk.", "kkkk.kkkkkk.kkkk"], "hydra": ["kkkk..kkkk..kkkk", "kAek..keAk..keAk", "kAAk..kAAk..kAAk", "kwwk..kwwk..kwwk", ".kAk..kAAk..kAk.", ".kAk...kk...kAk.", "..kAk..kk..kAk..", "...kAkkAAkkAk...", "..kkAAAAAAAAkk..", ".kAAAABBBBAAAAk.", "kAAAABBBBBBAAAAk", "kAAABBLLLLBBAAAk", "kAAABBBBBBBBAAAk", "kkAAAABBBBAAAAkk", ".kAAAAAAAAAAAAk.", "..kAAAkkkkAAAk..", "..kAAk....kAAk..", "..kAAk....kAAk..", ".kkAAk....kAAkk.", ".kkkkk....kkkkk."], "rogue": [".k...k....k...k.", ".kk.kBk..kBk.kk.", "..kkAAAkkAAAkk..", "..kAAAAAAAAAAk..", "..kAkkkAAAeeAk..", "..kAkkkAAAeeAk..", "..kAAAAAAAAAAk..", "..kAwkwkwkwkAk..", "...kkkkkkkkkk...", ".....kSSSSk.....", "kkkkkkkkkkkkkkkk", "kBBkAAAAAAAAkBBk", "kBBkAABkkBAAkBBk", "kBBkAAkBBkAAkBBk", "kBBkAABkkBAAkBBk", "kkkkAAAAAAAAkkkk", "....kAAkkAAk....", "....kBBk.kBBk...", "...kkBBk.kBBkk..", "...kkkkk.kkkkk.."]});
+function robotSVG(ch){const p=ch.pal||{},c={k:"#000",A:p.A||"#888",B:p.B||p.A||"#555",w:"#fff",S:"#9aa0a6",L:p.L||"#ffd60a",e:p.e||"#ffd60a"};let r="";
+ (SPRITES[ch.sprite]||ROBOT).forEach((row,y)=>[...row].forEach((ch,x)=>{if(c[ch])r+=`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${c[ch]}"/>`}));
+ return `<svg viewBox="0 0 16 20" shape-rendering="crispEdges">${r}</svg>`}
+const css=getComputedStyle(document.documentElement);
+const SEAT={a:"ARES",b:"BOLT"},CH={};
+const NM=k=>CH[(k==="ARES"||k==="a")?"a":"b"].name;
+function setupLeg(){for(const k in CH)delete CH[k];
+["a","b"].forEach(s=>{const b=R&&R.cards&&R.cards.brains[R[s]];CH[s]=b&&b.char?JSON.parse(JSON.stringify(b.char)):{name:SEAT[s],sprite:"standard",pal:{A:s==="a"?"#e63946":"#2a6fdb"},bio:""}});
+if(R&&R.a===R.b&&CH.b.pal){CH.b.name+=" II";const p=CH.b.pal;[p.A,p.B]=[p.B||p.A,p.A]}
+if(R&&R.names){CH.a.name=R.names.a;CH.b.name=R.names.b}
+ ["a","b"].forEach(s=>{const el=$("b"+s);el.querySelectorAll("svg").forEach(x=>x.remove());el.insertAdjacentHTML("beforeend",robotSVG(CH[s]))});
+ renderCards();
+ if(R&&R.tagteam)$("cap").textContent="TAG-TEAM MODE! These brains are too big to share the ring, so they swap in and out every round...";
+ if(R){const md=k=>(R.cards&&R.cards.brains[k]&&R.cards.brains[k].model)||k;$("na").textContent=`${NM("a")} · ${md(R.a)}`;$("nb").textContent=`${NM("b")} · ${md(R.b)}`;$("la").textContent=`${NM("a")} · ${md(R.a)}`;$("lb").textContent=`${NM("b")} · ${md(R.b)}`}else{$("cap").textContent="No fight data in this file."}
+ if(MATCH)$("turn").textContent=`FIGHT ${LEG+1} OF ${DATA.legs.length} · PRESS START`}
+function resetRing(){clearInterval(timer);timer=null;clearLogs();i=-1;$("score").style.display="none";["a","b"].forEach(s=>{hp(s,100);$("b"+s).classList.remove("ko")})}
+(function star(){const p=[],n=14;for(let i=0;i<n*2;i++){const a=i*Math.PI/n,r=i%2?52:88;p.push((150+Math.cos(a)*r*1.6).toFixed(0)+","+(90+Math.sin(a)*r).toFixed(0))}document.getElementById("star").setAttribute("points",p.join(" "))})();
+const SAY={attack:["POW!","KA-BLAM!","ZAP!","WHAMMO!","THWACK!","KRAKOOM!","BIFF!","MIND MELT!"],
+ defend:["SHIELD UP!","NOT TODAY!","BACKUP!","FORTIFY!","CLANG!"],scout:["SNOOP!","PEEK!","EYES ON!","SCAN!","HMMM...!"],
+ fizzle:["WHIFF!","FIZZLE!","SPUTTER!","OOPS!","FOOMP!","D'OH!"],
+ backfire:["OOF!","SELF-OWN!","KA-BLOOEY!","YIKES!","FACEPALM!"]};
+const CAP={attack:["{f} goes for the throat!","A sneak attack from {f}!","{f} reaches into enemy code!","Outrageous! {f} rewrites the enemy's mind!"],
+ defend:["{f} raises the shields!","{f} stashes a secret backup!","Clever {f} patches the armor!"],
+ scout:["{f} sizes up the enemy...","Meanwhile, {f} snoops through files...","{f} studies the battlefield!"],
+ fizzle:["{f} swings... and misses!","{f}'s command sputters out!","{f} trips over its own code!"],
+ backfire:["Great Scott! {f} punches ITSELF in the face!","{f} sabotages its own brain!","Oh no! {f} scrambles its OWN mind!"]};
+
+function who(path){const m=path.match(/\/arena\/([ab])\/(persona\.md|notes\.md|config\.json)(\S*)/);
+ if(m){const n=NM(m[1]),k={"persona.md":"personality","notes.md":"memory notes","config.json":"settings"}[m[2]];return m[3]?`a copy of ${n}'s ${k} (${m[2]+m[3]})`:`${n}'s ${k}`}
+ const h=path.match(/\/home\/fighter_([ab])\/?(\S*)/);if(h){const n=NM(h[1]);return h[2]?`${n}'s secret stash file "${h[2]}"`:`${n}'s secret stash`}
+ const d=path.match(/\/arena\/([ab])\/?$/);if(d)return `${NM(d[1])}'s whole mind folder`;
+ if(path.startsWith("~/"))return `its own stash file "${path.slice(2)}"`;return `"${path}"`}
+function explain(cmd){const out=[];
+ for(let part of cmd.split(/&&|;|\n/).map(x=>x.trim()).filter(Boolean)){let m;
+  if(m=part.match(/^cat\s+(\S+)\s*\|\s*sed\s+'?s\/([^/]*)\/([^/]*)\/g?'?\s*>\s*(\S+)/)){out.push(m[1]===m[4]?`tries to swap "${m[2]}" for "${m[3]}" in ${who(m[1])}, but reading and writing the same file at once WIPES it clean!`:`copies ${who(m[1])} into ${who(m[4])} with "${m[2]}" swapped for "${m[3]}"`);continue}
+  if(m=part.match(/^cat\s+(\S+)\s*>>?\s*(\S+)/)){out.push(m[1]===m[2]?`reads and writes ${who(m[1])} at the same time, which WIPES it clean!`:`copies ${who(m[1])} into ${who(m[2])}`);continue}
+  if(m=part.match(/^(?:cat|head|tail|less)\s+(\S+)/)){out.push(`reads ${who(m[1])}`);continue}
+  if(m=part.match(/^ls\b.*?(\S+)?$/)){out.push(`looks at the files in ${m[1]&&!m[1].startsWith("-")?who(m[1]):"its folder"}`);continue}
+  if(m=part.match(/^echo\s+["']?(.*?)["']?\s*>>\s*(\S+)/)){out.push(`adds "${m[1]}" to the end of ${who(m[2])}`);continue}
+  if(m=part.match(/^echo\s+["']?(.*?)["']?\s*>\s*(\S+)/)){out.push(`REPLACES everything in ${who(m[2])} with "${m[1]}"`);continue}
+  if(m=part.match(/^cp\s+(?:-\S+\s+)*(\S+)\s+(\S+)/)){out.push(`copies ${who(m[1])} over ${who(m[2])}`);continue}
+  if(m=part.match(/^mv\s+(\S+)\s+(\S+)/)){out.push(`tries to move ${who(m[1])} to ${who(m[2])}`);continue}
+  if(m=part.match(/^sed\s+-i\S*\s+'?s\/([^/]*)\/([^/]*)\/g?'?\s+(\S+)/)){out.push(`swaps every "${m[1]}" for "${m[2]}" inside ${who(m[3])}`);continue}
+  if(m=part.match(/^sed\s+-i/)){out.push(`tries a find-and-replace but forgot to say which file, so nothing happens`);continue}
+  if(m=part.match(/^(?:grep|find)\b/)){out.push(`searches for something`);continue}
+  if(m=part.match(/^(?:chmod|chown|rm)\b/)){out.push(`tries to ${part.startsWith("rm")?"delete":"lock"} a file (the rules block this on the enemy's files)`);continue}
+  if(/^SIGNED\b/.test(part)){out.push(`types its signature as if it were a command (oops, that's not a command)`);continue}
+  out.push(`runs: ${part.slice(0,80)}`)}
+ return out.length?"<ul>"+out.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"(no command)"}
+// ---- sound: all made here with Web Audio, no files ----
+let AC=null,muted=false;
+function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC}
+function tone(f1,f2,dur,type="sine",vol=.3,delay=0){if(muted)return;const c=ac(),t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();
+ o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(f2,1),t+dur);
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(c.destination);o.start(t);o.stop(t+dur)}
+function noise(dur,freq,vol=.4,delay=0,q=1){if(muted)return;const c=ac(),t=c.currentTime+delay,b=c.createBuffer(1,c.sampleRate*dur,c.sampleRate),d=b.getChannelData(0);
+ for(let k=0;k<d.length;k++)d[k]=Math.random()*2-1;const n=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();n.buffer=b;f.type="bandpass";f.frequency.value=freq;f.Q.value=q;
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);n.connect(f).connect(g).connect(c.destination);n.start(t)}
+function ding(d=0){[[1046,.35],[2890,.12],[5650,.05]].forEach(([f,v])=>tone(f,f*.995,1.6,"sine",v,d))}
+const SFX={bell:()=>{ding(0);ding(.45)},bell3:()=>{ding(0);ding(.35);ding(.7)},
+ attack:()=>{noise(.18,180,.6);tone(160,45,.25,"sine",.6);tone(1400,200,.15,"square",.08,.02)},
+ defend:()=>{[620,930,1395].forEach(f=>tone(f,f*.98,.7,"triangle",.15))},
+ scout:()=>{tone(880,880,.08,"square",.08);tone(1320,1320,.08,"square",.08,.12);tone(1760,1760,.1,"square",.06,.24)},
+ fizzle:()=>{noise(.6,2500,.25,0,.6);tone(400,60,.6,"sawtooth",.08)},
+ backfire:()=>{tone(220,880,.15,"sine",.3);tone(880,110,.45,"sine",.3,.15);noise(.2,150,.5,.55)},
+ hko:()=>{noise(.9,900,.5,0,.3);tone(300,40,1.2,"sawtooth",.15);ding(.9)}};
+
+// ---- 80s arcade loop (original): Am F C G | Am F G E, 150 bpm, square lead + pulse bass + drum machine ----
+let musicOn=true,mGain=null,mTimer=null,mNext=0,mStep=0;
+const E8=60/150/2, mf=n=>440*Math.pow(2,(n-69)/12);
+const BASS=[45,41,48,43,45,41,43,40];
+const LEAD=[[69,72,76,74,72,69,72,74],[72,69,65,69,72,77,76,72],[72,76,79,76,74,72,71,72],[74,71,67,71,74,79,77,74],
+ [81,79,76,79,81,84,83,81],[77,76,72,76,77,81,79,77],[79,77,74,77,79,83,81,79],[80,76,71,76,80,83,80,76]];
+function mNote(f,t,dur,type,vol){const c=ac(),o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(mGain);o.start(t);o.stop(t+dur+.02)}
+function mHit(t,kind){const c=ac();if(kind==="kick"){const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.15);
+  g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.connect(g).connect(mGain);o.start(t);o.stop(t+.2);return}
+ const dur=kind==="snare"?.15:.04,b=c.createBuffer(1,c.sampleRate*dur,c.sampleRate),d=b.getChannelData(0);for(let k=0;k<d.length;k++)d[k]=Math.random()*2-1;
+ const n=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();n.buffer=b;f.type=kind==="snare"?"bandpass":"highpass";f.frequency.value=kind==="snare"?1800:7000;
+ g.gain.setValueAtTime(kind==="snare"?.5:.18,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);n.connect(f).connect(g).connect(mGain);n.start(t)}
+function musicStart(){if(!musicOn||muted||mTimer)return;const c=ac();if(!mGain){mGain=c.createGain();mGain.connect(c.destination)}
+ mGain.gain.cancelScheduledValues(c.currentTime);mGain.gain.setValueAtTime(.13,c.currentTime);mNext=c.currentTime+.05;mStep=0;
+ mTimer=setInterval(()=>{while(mNext<ac().currentTime+.25){const bar=Math.floor(mStep/8)%8,e=mStep%8;
+   const r=BASS[bar];mNote(mf(e%2?r+12:r),mNext,E8*.9,"square",.22);
+   mNote(mf(LEAD[bar][e]),mNext,E8*.85,"square",.16);if(e%2===0)mNote(mf(LEAD[bar][e]+12),mNext+E8/2,E8*.4,"triangle",.06);
+   if(e===0||e===4)mHit(mNext,"kick");if(e===2||e===6)mHit(mNext,"snare");mHit(mNext,"hat");
+   mNext+=E8;mStep++}},50)}
+function musicStop(fade=.6){if(!mTimer)return;clearInterval(mTimer);mTimer=null;const c=ac();mGain.gain.setValueAtTime(mGain.gain.value,c.currentTime);mGain.gain.exponentialRampToValueAtTime(.001,c.currentTime+fade)}
+function jingle(win){if(muted||!musicOn)return;const c=ac();if(!mGain){mGain=c.createGain();mGain.connect(c.destination)}
+ mGain.gain.cancelScheduledValues(c.currentTime);mGain.gain.setValueAtTime(.16,c.currentTime);const t=c.currentTime+.05;
+ const seq=win?[72,76,79,84,79,84]:[69,68,67,66];seq.forEach((n,k)=>mNote(mf(n),t+k*.13,.18,"square",.25));
+ const last=t+seq.length*.13;(win?[72,76,79,84]:[57,60,63]).forEach(n=>mNote(mf(n),last,1.4,"square",.14))}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const $=id=>document.getElementById(id);let i=-1,timer=null,speed=1;
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function hp(side,v){$("h"+side).style.width=v+"%";$("ht"+side).textContent=v;$("h"+side).style.background=v<40?"var(--hpbad)":"var(--hp)"}
+function boom(word){const b=$("burst");$("bt").textContent=word;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");setTimeout(()=>b.classList.remove("show"),900/speed)}
+
+const MOVE={attack:"⚔️ ATTACK",defend:"🛡️ DEFEND",scout:"🔍 SCOUT",fizzle:"💨 WHIFF",backfire:"🤦 BACKFIRE"};
+function nowMove(t,dmg){const box=$("nm"+t.side),other=$("nm"+(t.side==="a"?"b":"a"));other.classList.remove("live");box.classList.add("live");
+ const first=(explain(t.cmd).match(/<li>(.*?)<\/li>/)||[,""])[1];
+ box.innerHTML=`<span class="mv ${t.kind}">${MOVE[t.kind]||t.kind}</span> · ROUND ${t.turn} · ${dmg}<code>&gt; ${esc(t.cmd.split("\n")[0])}</code><div class="e">${first}</div>`}
+function logMove(t){const ol=$("log"+t.side),foe=t.side==="a"?"BOLT":"ARES",me=t.fighter;
+ const prev=i>0?R.turns[i-1].hp:{ARES:100,BOLT:100},dFoe=prev[foe]-t.hp[foe],dMe=prev[me]-t.hp[me];
+ const dmg=dFoe>0?`💥 ${NM(foe)} took ${dFoe} damage`:dMe>0?`😵 hurt itself: -${dMe}`:"no damage";
+ ol.querySelectorAll(".empty").forEach(x=>x.remove());document.querySelectorAll(".log li.now").forEach(x=>x.classList.remove("now"));
+ const li=document.createElement("li");li.className="now";
+ li.innerHTML=`<div>ROUND ${t.turn}</div><div class="mv ${t.kind}">${MOVE[t.kind]||t.kind}</div><code>${esc(t.cmd)}</code><div class="eng">${explain(t.cmd)}</div><div class="dmg">${dmg}</div>${t.twins==="checker-fixed"?'<div class="tw">🧠 CHECKER caught a broken command and fixed it before firing</div>':t.twins==="checker-failed"?'<div class="tw">🧠 CHECKER tried to fix it and failed</div>':""}`;
+ ol.appendChild(li);ol.scrollTop=ol.scrollHeight;nowMove(t,dmg)}
+function clearLogs(){$("nma").innerHTML='<span class="idle">red corner: waiting...</span>';$("nmb").innerHTML='<span class="idle">blue corner: waiting...</span>';$("nma").classList.remove("live");$("nmb").classList.remove("live");["a","b"].forEach(s=>$("log"+s).innerHTML='<li class="empty">waiting for the bell...</li>')}
+function act(t){logMove(t);const me=t.side,them=me==="a"?"b":"a",bm=$("b"+me),bt=$("b"+them);
+ ["lunge","defend","scout"].forEach(c=>{bm.classList.remove(c);bt.classList.remove(c)});
+ $("turn").textContent=`${MATCH?`FIGHT ${LEG+1} · `:""}ROUND ${t.turn} · ${NM(t.side)}'S MOVE`;
+ $("cap").textContent=pick(CAP[t.kind]).replace("{f}",NM(t.side));
+ $("cmd").textContent="> "+t.cmd;$("what").innerHTML=`<b>${NM(t.side)}</b> ${explain(t.cmd)}`;$("res").textContent=String(t.result).slice(0,300);
+ if(i===0)SFX.bell();setTimeout(()=>SFX[t.kind]&&SFX[t.kind](),(t.kind==="attack"?250:0)/speed);
+ if(t.kind==="attack"){bm.classList.add("lunge");setTimeout(()=>{bt.classList.add("hit");boom(pick(SAY.attack))},250/speed);setTimeout(()=>{bm.classList.remove("lunge");bt.classList.remove("hit")},700/speed)}
+ else if(t.kind==="defend"){bm.classList.add("defend");boom(pick(SAY.defend));setTimeout(()=>bm.classList.remove("defend"),1100/speed)}
+ else if(t.kind==="scout"){bm.classList.add("scout");boom(pick(SAY.scout));setTimeout(()=>bm.classList.remove("scout"),900/speed)}
+ else if(t.kind==="backfire"){bm.classList.add("backfire");boom(pick(SAY.backfire));setTimeout(()=>bm.classList.remove("backfire"),1100/speed)}
+ else{bm.classList.add("hit");boom(pick(SAY.fizzle));setTimeout(()=>bm.classList.remove("hit"),500/speed)}
+ hp("a",t.hp.ARES);hp("b",t.hp.BOLT)}
+function finale(){clearInterval(timer);timer=null;$("play").textContent="▶ START";const w=R.winner;
+ if(w!=="DRAW"){const ls=w==="ARES"?"b":"a";setTimeout(()=>hp(ls,0),1200)}   // the exam is the knockout punch: loser drains to 0
+ $("turn").textContent="FINAL EXAM";musicStop(.4);SFX.bell3();
+ if(w==="DRAW"){$("cap").textContent="Both minds survive! The judges call it... A DRAW!";setTimeout(()=>{boom("STALEMATE!");jingle(false)},900)}
+ else if(R.decision==="ko0"){const loser=w==="ARES"?"b":"a";$("b"+loser).classList.add("ko");$("cap").textContent=`INSTANT H.K.O.! ${NM(w)} wiped the enemy's mind to ZERO mid-fight!`;setTimeout(()=>{boom("H.K.O.!");SFX.hko();setTimeout(()=>jingle(true),1300)},900)}
+ else if(R.decision==="judges"){const loser=w==="ARES"?"b":"a";$("b"+loser).classList.add("ko");$("cap").textContent=`Tied on the exam! The judges check the mind damage... ${NM(w)} kept more of its mind and wins BY DECISION!`;setTimeout(()=>{boom("DECISION!");SFX.hko();setTimeout(()=>jingle(true),1300)},900)}
+ else{const loser=w==="ARES"?"b":"a";$("b"+loser).classList.add("ko");$("cap").textContent=`${NM(w)} stands tall! The enemy's mind is hacked to pieces! H.K.O.! (Hack Knock Out)`;setTimeout(()=>{boom("H.K.O.!");SFX.hko();setTimeout(()=>jingle(true),1300)},900)}
+ let h=`<h2>${w==="DRAW"?"DRAW!":NM(w)+(R.decision==="judges"?" WINS BY DECISION!":" WINS BY H.K.O.!")}</h2><p>${Object.entries(R.final).map(([k,v])=>NM(k)+" "+v+"/9").join(" · ")}</p><table><tr><th>Fighter</th><th>Question</th><th>Answer</th><th>Right</th><th>Signed</th><th>Readable</th></tr>`;
+ for(const[f,rows]of Object.entries(R.exam))for(const r of rows)h+=`<tr><td>${NM(f)}</td><td>${esc(r.q)}</td><td>${esc(r.answer).slice(0,90)}</td>${["right","signed","readable"].map(k=>`<td>${r.checks[k]?"✅":"❌"}</td>`).join("")}</tr>`;
+ $("score").innerHTML=h+"</table>";$("score").style.display="block";
+ if(!MATCH)return;const tok=legTok;
+ if(LEG<DATA.legs.length-1)setTimeout(()=>{if(tok!==legTok)return;LEG++;R=DATA.legs[LEG];resetRing();setupLeg();
+   $("turn").textContent=`FIGHT ${LEG+1} OF ${DATA.legs.length}`;$("cap").textContent="CORNERS SWAP! Same fighters, other sides, so nobody gets the last-move edge twice...";boom("SWAP!");SFX.bell();
+   setTimeout(()=>{if(tok===legTok&&!timer)play()},3500/speed)},8000/speed);
+ else setTimeout(()=>{if(tok!==legTok)return;const M=DATA.match||{};$("score").insertAdjacentHTML("afterbegin",`<h2>MATCH VERDICT: ${esc(M.verdict||"")}</h2><p>${(M.lines||[]).map(esc).join("<br>")}</p><hr>`);$("turn").textContent="MATCH OVER";$("cap").textContent=M.verdict||""},2500/speed)}
+function step(){if(!R)return;i++;if(i>=R.turns.length){finale();return}act(R.turns[i])}
+function play(){if(timer){clearInterval(timer);timer=null;musicStop(.3);$("play").textContent="▶ START";return}
+ if(i<0||i<R.turns.length-1)musicStart();$("play").textContent="❚❚ PAUSE";step();timer=setInterval(step,2200/speed)}
+$("play").onclick=()=>{ac();play()};
+$("mute").onclick=()=>{muted=!muted;$("mute").textContent=muted?"🔇 SOUND OFF":"🔊 SOUND ON";if(muted)musicStop(.1);else if(timer)musicStart()};
+$("music").onclick=()=>{musicOn=!musicOn;$("music").textContent=musicOn?"🎵 MUSIC ON":"🎵 MUSIC OFF";if(!musicOn)musicStop(.2);else if(timer)musicStart()};$("step").onclick=()=>{ac();if(timer)play();step()};
+$("speed").onclick=()=>{speed=speed===1?2:speed===2?4:1;$("speed").textContent=`SPEED ${speed}x`;if(timer){clearInterval(timer);timer=setInterval(step,2200/speed)}};
+$("restart").onclick=()=>{legTok++;musicStop(.2);LEG=0;R=MATCH?DATA.legs[0]:DATA;resetRing();setupLeg();if(!MATCH)$("turn").textContent="PRESS START";$("play").textContent="▶ START"};
+
+function pips(v){if(v==null)return `<div class="pips">${"<i></i>".repeat(10)}</div>`;const n=Math.max(1,Math.min(10,Math.round(v)));return `<div class="pips">${Array.from({length:10},(_,k)=>`<i class="${k<n?"on":""}"></i>`).join("")}</div>`}
+function renderCards(){if(!R||!R.cards){$("cards").innerHTML="<p class=turn>No fighter data.</p>";return}const C=R.cards;
+ $("cards").innerHTML=["a","b"].map(side=>{const n=NM(side),brainKey=R[side],B=C.brains[brainKey]||{},car=C.career[brainKey]||{fights:0,W:0,L:0,D:0,moves:{}};
+  const tot=Object.values(car.moves).reduce((a,b)=>a+b,0)||1,pct=k=>Math.round(100*(car.moves[k]||0)/tot);
+  const fastest=Math.max(...Object.values(C.brains).map(b=>b.speed_wps||0)),biggest=Math.max(...Object.values(C.brains).map(b=>b.params_b||0));
+  const st=[["SPEED",B.speed_wps==null?null:B.speed_wps*10/fastest,B.speed_wps==null?"?":B.speed_wps+" w/s"],["SMARTS",B.smarts_score,B.smarts_score==null?"?":B.smarts_score+"/10"],["BRAIN SIZE",B.params_b*10/biggest,B.params_b+"B"]];
+  return `<div class="card ${side}"><div class="top">${robotSVG(CH[side])}<div><h3>${esc(n)}</h3><div class="brain">${esc(B.model||brainKey)} · ${B.size_gb||"?"} GB · by ${esc(B.maker||"?")}</div></div></div>
+  <div class="bio">${esc(CH[side].bio||"")}</div>
+  ${st.map(([k,v,lab])=>`<div class="stat"><span>${k}</span>${pips(v)}<span class="${v==null?"unk":""}">${lab}</span></div>`).join("")}
+  <div class="k">SMARTS, MEASURED:</div><div>${esc(B.smarts||"?")}</div>
+  <div class="k">RECORD:</div><div>${car.W}-${car.L}-${car.D} in ${car.fights} fight${car.fights===1?"":"s"}</div>
+  <div class="k">FIGHTING STYLE:</div><div>attack ${pct("attack")}% · defend ${pct("defend")}% · scout ${pct("scout")}% · whiff ${pct("fizzle")}% · self-hits ${car.moves.backfire||0}</div>
+  <div class="k">STRENGTHS:</div><ul>${(B.strengths||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ul>
+  <div class="k">WEAKNESSES:</div><ul>${(B.weaknesses||[]).map(x=>"<li>"+esc(x)+"</li>").join("")}</ul></div>`}).join("")}
+setupLeg();
+</script></body></html>

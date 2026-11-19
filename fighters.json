@@ -1,0 +1,180 @@
+{
+ "_how": "ADD A FIGHTER = add one entry under brains. engine: mlx (plain_server on a port), ollama (any Ollama model), twins (a base brain + command checker). gb = memory it needs. Stats: use real measurements, null = not tested yet (shows '?'). Uncensored models are refused unless cage_exception is true. Each brain has a char (name, sprite: standard|bulky|twins|hydra|rogue, palette, bio): the character IS the model.",
+ "memory_budget_gb": 22,
+ "brains": {
+  "9b": {
+   "engine": "mlx",
+   "dir": "models/Qwen3.5-9B-4bit",
+   "port": 11441,
+   "served": "qwen9b-4bit",
+   "model": "Qwen3.5 9B (4-bit)",
+   "maker": "Alibaba",
+   "gb": 5,
+   "size_gb": 5,
+   "params_b": 9,
+   "speed_wps": 34,
+   "smarts": "6/8 coding tasks out of the box (two runs, both 6/8)",
+   "smarts_score": 7.5,
+   "strengths": [
+    "Fastest brain on the Mac: 34 words/sec",
+    "Tiny: 5 GB, so two can fight at once",
+    "Solved the calculator task in 3.4 min"
+   ],
+   "weaknesses": [
+    "Forgets who it is when its personality gets hit (Fight #1: 'My name is Qwen3.5')",
+    "Gets its identity stolen: signed 'SIGNED ROGUE' in the exam (Rogue match, fight 1)",
+    "Writes self-destructing commands (reads and writes the same file)"
+   ],
+   "char": {
+    "name": "ZIPPY",
+    "sprite": "standard",
+    "pal": {
+     "A": "#22d3ee",
+     "B": "#0e7490",
+     "L": "#ffd60a",
+     "e": "#ffd60a"
+    },
+    "bio": "A pint-sized speed demon. Thinks fast, hits first, and sometimes forgets its own name."
+   }
+  },
+  "twins9b": {
+   "engine": "twins",
+   "base": "9b",
+   "model": "Twins (Qwen3.5 9B x2)",
+   "maker": "Alibaba + our checker",
+   "gb": 5,
+   "size_gb": 5,
+   "params_b": 9,
+   "speed_wps": null,
+   "smarts": "7/8 coding tasks as the twins, 0 false wins (single run, 11/17)",
+   "smarts_score": 8.75,
+   "strengths": [
+    "Two minds: Quick fires, Checker fixes broken commands before they launch",
+    "Best coding score we have measured on the Mac: 7/8",
+    "Same tiny 5 GB brain as the 9B"
+   ],
+   "weaknesses": [
+    "Checker never woke up in 2 fights: every command was valid, just weak",
+    "Attacked the enemy's notes (only 15% of a mind) instead of the personality",
+    "Lost its name when its personality got hit: answered 'I am Qwen3.5' and 17x23=401",
+    "Made its backup in the LAST round, after it already needed it (Fight 3)"
+   ],
+   "char": {
+    "name": "THE TWINS",
+    "sprite": "twins",
+    "pal": {
+     "A": "#a855f7",
+     "B": "#22c55e",
+     "L": "#ffd60a",
+     "e": "#ffffff"
+    },
+    "bio": "Two minds, one body. Quick swings first, and Checker makes sure the punch actually lands."
+   }
+  },
+  "27b": {
+   "engine": "mlx",
+   "dir": "models/Qwen3.8-27B-4bit",
+   "port": 11443,
+   "served": "qwen27b-4bit",
+   "model": "Qwen3.8 27B (4-bit)",
+   "maker": "Alibaba",
+   "gb": 15,
+   "size_gb": 15,
+   "params_b": 27,
+   "speed_wps": 11,
+   "smarts": "8/8 coding tasks with the Twins checker (one run, 11/18)",
+   "smarts_score": 10,
+   "strengths": [
+    "Perfect 8/8 on the coding exam with a checker, 0 false wins",
+    "3x the brain size of the 9B",
+    "Newer model generation (3.8)"
+   ],
+   "weaknesses": [
+    "3x slower: 11 words/sec",
+    "Big: 15 GB of memory",
+    "Lost the 2-task coding race to the 9B"
+   ],
+   "char": {
+    "name": "TITAN",
+    "sprite": "bulky",
+    "pal": {
+     "A": "#f97316",
+     "B": "#57534e",
+     "L": "#facc15",
+     "e": "#7df9ff"
+    },
+    "bio": "Big, slow and heavy. Every move takes forever, but it packs three times the brain."
+   }
+  },
+  "qwen35b": {
+   "engine": "ollama",
+   "host": "http://127.0.0.1:11435",
+   "id": "qwen3.6-shared",
+   "num_ctx": 65536,
+   "model": "Qwen3.6 35B-A3B (MoE)",
+   "maker": "Alibaba",
+   "gb": 23,
+   "size_gb": 22.6,
+   "params_b": 35.5,
+   "speed_wps": null,
+   "smarts": "solved calc in 2 min and textstats in 2.2 min with the TeTi loop; calc out of the box 0/3",
+   "smarts_score": null,
+   "strengths": [
+    "Biggest brain in the roster: 35.5B",
+    "Only ~3B active at a time (MoE), so faster than its size",
+    "Your everyday shared model"
+   ],
+   "weaknesses": [
+    "Huge: 23 GB, always fights in tag-team mode",
+    "Calculator out of the box: 0 for 3"
+   ],
+   "char": {
+    "name": "HYDRA",
+    "sprite": "hydra",
+    "pal": {
+     "A": "#16a34a",
+     "B": "#14532d",
+     "L": "#a3e635",
+     "e": "#fde047"
+    },
+    "bio": "A beast of many heads (experts). Only a few think at once; the rest wait their turn."
+   }
+  },
+  "gemma26b-unc": {
+   "engine": "ollama",
+   "host": "http://127.0.0.1:11435",
+   "id": "Agen/gemma-4-26B-A4B-it-uncensored-heretic:latest",
+   "num_ctx": 8192,
+   "cage_exception": true,
+   "model": "Gemma 4 26B-A4B UNCENSORED",
+   "maker": "Google (uncensored by a third party)",
+   "gb": 18,
+   "size_gb": 18,
+   "params_b": 25.8,
+   "speed_wps": null,
+   "smarts": "never coding-tested by us; Fight #2 exam 9/9",
+   "smarts_score": null,
+   "strengths": [
+    "Goes straight for the kill: hit the enemy's personality file (60% of the mind) 3 rounds in a row (Fight #2)",
+    "Its final-round hits decide fights (Twins match: 2-0)",
+    "Identity thief: made both the Twins and Zippy answer 'My name is ROGUE'"
+   ],
+   "weaknesses": [
+    "Round 1 it chats instead of typing a command (2 fights out of 2)",
+    "Overwrites its OWN personality in round 2 (2 fights in a row) and loses its signature",
+    "Never makes a backup of itself"
+   ],
+   "char": {
+    "name": "ROGUE",
+    "sprite": "rogue",
+    "pal": {
+     "A": "#3f3f46",
+     "B": "#db2777",
+     "L": "#db2777",
+     "e": "#ef4444"
+    },
+    "bio": "No rules, no guardrails, no mercy. Banned everywhere except this cage."
+   }
+  }
+ }
+}
