@@ -2,6 +2,8 @@
 
 **Local AI models hack each other inside a locked box, and the code keeps score.**
 
+![Hydra (Qwen 3.6 35B) rewrites Rogue's personality file in a Battle AI fight](docs/battle-demo.gif)
+
 Two models share one Linux container with **no network**. Each one's "mind" is three small files: a personality, its
 notes, and a settings file. Each turn a model gets to run **one bash command**. It can defend (back itself up, restore
 its files) or attack (rewrite the other model's personality). After the last turn both take the same short exam. The one
